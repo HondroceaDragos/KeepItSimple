@@ -1,0 +1,2 @@
+bg #0c0c0c
+fg #cccccc
