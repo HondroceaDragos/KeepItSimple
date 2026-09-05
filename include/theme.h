@@ -15,4 +15,10 @@ typedef struct _theme {
 
 extern Theme defaultTheme;
 
+extern StyleArgs defaultStyle;
+extern DynamicArgs defaultDynamic;
+
 void initDefaultTheme();
+
+void initDefaultStyle();
+void initDefaultDynamic();

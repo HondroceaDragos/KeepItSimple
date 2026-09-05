@@ -179,6 +179,10 @@ static inline void move_col(ColRelativeMovement crm, size_t col) {
     }
 }
 
+static inline void absoluteCursorMove(size_t row, size_t col) {
+    printf("\x1b[%zu;%zuH", row, col);
+}
+
 /* Color type */
 typedef struct _color {
     int16_t r;
@@ -461,6 +465,7 @@ typedef struct _printer {
     int8_t *start;
     DynamicArgs dynamic;
     int32_t repeat;
+    FILE *stream;
 } Printer;
 
 /* Helper - apply style */
@@ -979,9 +984,9 @@ static inline void _add_char_inline(FILE *to, Printer p) {
 
 /* Helper - combine all printer options */
 static inline void _use_printer(Printer p) {
-    FILE *to = stdout;
+    FILE *to = p.stream ? p.stream : stdout;
 
-    if (strcmp(p.out, "stdout")) to = fopen(p.out, "a");
+    if (!p.stream && strcmp(p.out, "stdout")) to = fopen(p.out, "a");
     if (p.dynamic.cursor) fprintf(to, CURSOR_H);
 
     if (strchr(p.text, '[')) {
@@ -997,7 +1002,7 @@ static inline void _use_printer(Printer p) {
     }
 
     if (p.dynamic.cursor) fprintf(to, CURSOR_S);
-    if (strcmp(p.out, "stdout")) fclose(to);
+    if (!p.stream && strcmp(p.out, "stdout")) fclose(to);
 }
 
 /**

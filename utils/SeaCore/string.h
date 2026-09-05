@@ -222,6 +222,8 @@ static inline StringBuilder newStringBuilderPrimitive(const int8_t *s, size_t sl
     ret->consume = StringBuilderVTableInstance.consume;
     ret->release = StringBuilderVTableInstance.release;
 
+    ret->append = StringBuilderVTableInstance.append;
+
     return ret;
 }
 

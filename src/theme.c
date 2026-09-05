@@ -69,3 +69,19 @@ void initDefaultTheme() {
 
     defaultTheme.fg = color(r, g, b);  // set fg
 }
+
+void initDefaultStyle() {
+    defaultStyle = _new_style_args(
+        (StyleArgs){
+            .color = defaultTheme.fg,
+            .background = defaultTheme.bg
+    });
+}
+
+void initDefaultDynamic() {
+    defaultDynamic = _new_dynamic_args(
+        (DynamicArgs){
+            .delay = 120,
+            .raw = true
+    });
+}

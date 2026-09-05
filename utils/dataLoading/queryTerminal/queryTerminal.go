@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	outputStream, err := os.Create("../../../data/terminal.txt")
+	outputStream, err := os.Create("./data/terminal.txt")
 	if err != nil {
 		log.Fatal(err)
 	}
