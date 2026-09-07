@@ -8,12 +8,12 @@ struct _writable_region {
     TerminalDimensions dimensions;
     TerminalDimensions offset;
 
-    Vector(TextNode) nodes;
-    size_t cursor;
+    Vector(TextNode) nodeHistory;
+    TextNode currNode;
 
     void (*addNode)(WritableRegion, TextNode);
     void (*tickWrite)(WritableRegion, i64);
     void (*tickFlush)(WritableRegion);
 };
 
-WritableRegion newWritableRegion(TerminalDimensions *td);
+WritableRegion newWritableRegion(TerminalDimensions *dimensions, TerminalDimensions offset);

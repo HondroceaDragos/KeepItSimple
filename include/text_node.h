@@ -4,17 +4,18 @@
 #include "theme.h"
 #include "choice.h"
 #include "parser.h"
+#include "../utils/Print/printer.h"
 
 typedef struct _text_node *TextNode;
 struct _text_node {
     i64 id;
     str preamble;
+    Vector(InlineStyle) runs;
     Vector(Choice) choices;
 
-    Vector(InlineStyle) runs;
     i64 blitChCount;
 
-    void (*flushPreamble)(TextNode, size_t, size_t);
+    void (*flushNode)(TextNode);
 };
 
 TextNode newTextNode(i64 id, c_str preamble, Vector(Choice) choices);

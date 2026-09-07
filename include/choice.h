@@ -2,13 +2,16 @@
 
 #include "templates.h"
 
+typedef (*sideEffectFunc)(i32);
+
 typedef struct _choice *Choice;
 struct _choice {
     c_str text;
-    void *sideEffect;  // to-be-implemented;
+    sideEffectFunc sideEffect;
+    i64 goingTo;
 };
 
-Choice newChoice(c_str text, void *sideEffect);
+Choice newChoice(c_str text, sideEffectFunc sideEffect, i64 goingTo);
 
 deleteDefine(Choice) {
     if (!self || !*self) return;
