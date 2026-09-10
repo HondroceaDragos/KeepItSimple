@@ -14,8 +14,6 @@ struct _text_node {
     Vector(Choice) choices;
 
     i64 blitChCount;
-
-    void (*flushNode)(TextNode);
 };
 
 TextNode newTextNode(i64 id, c_str preamble, Vector(Choice) choices);

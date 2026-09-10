@@ -10,3 +10,7 @@ ArrayType(InlineStyle)
 VectorType(InlineStyle)
 
 PairType(Vector(InlineStyle), StringBuilder)
+
+deleteType(str)
+ArrayType(str)
+VectorType(str)
