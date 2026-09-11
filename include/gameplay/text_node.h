@@ -1,10 +1,10 @@
 #pragma once
 
-#include "templates.h"
-#include "theme.h"
+#include "../templates.h"
+#include "../rendering/theme.h"
 #include "choice.h"
 #include "parser.h"
-#include "../utils/Print/printer.h"
+#include "../../utils/Print/printer.h"
 
 typedef struct _text_node *TextNode;
 struct _text_node {
@@ -23,6 +23,7 @@ deleteDefine(TextNode) {
     delete(Vector(Choice))(&(*self)->choices);
     delete(Vector(InlineStyle))(&(*self)->runs);
     free((void *)(*self)->preamble.data);
+    free(*self);
     *self = nullptr;
 }
 

@@ -1,4 +1,4 @@
-#include "../include/chapter.h"
+#include "../../include/gameplay/chapter.h"
 
 Chapter newChapter(c_str name, Vector(TextNode) nodes) {
     Chapter c = calloc(1, sizeof(*c));

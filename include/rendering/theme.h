@@ -5,8 +5,8 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "../utils/Print/printer.h"
-#include "../utils/SeaCore/stdc.h"
+#include "../../utils/Print/printer.h"
+#include "../../utils/SeaCore/stdc.h"
 
 typedef struct _theme {
     Color bg;

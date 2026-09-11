@@ -2,7 +2,7 @@
 
 #include "time.h"
 
-#include "../utils/SeaCore/stdc.h"
+#include "../../utils/SeaCore/stdc.h"
 
 typedef struct _clock Clock;
 struct _clock {

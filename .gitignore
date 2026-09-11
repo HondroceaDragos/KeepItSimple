@@ -22,6 +22,7 @@ vendor/
 *.out
 *.gch
 *.pch
+main
 
 # Build directories
 /bin/

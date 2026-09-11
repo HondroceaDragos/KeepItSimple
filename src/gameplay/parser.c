@@ -1,4 +1,4 @@
-#include "../include/parser.h"
+#include "../../include/gameplay/parser.h"
 
 Pair(Vector(InlineStyle), StringBuilder) extractBufferData(c_str rawData, StyleArgs style, DynamicArgs dynamic) {
     size_t dlen = strlen(rawData);

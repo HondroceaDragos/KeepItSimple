@@ -1,6 +1,6 @@
 #pragma once
 
-#include "templates.h"
+#include "../templates.h"
 
 typedef (*sideEffectFunc)(i32);
 
@@ -15,7 +15,7 @@ Choice newChoice(c_str text, sideEffectFunc sideEffect, i64 goingTo);
 
 deleteDefine(Choice) {
     if (!self || !*self) return;
-    // TBD if anything else needs to-be-freed
+    free(*self);
     *self = nullptr;
 }
 ArrayType(Choice)

@@ -1,4 +1,4 @@
-#include "../include/text_node.h"
+#include "../../include/gameplay/text_node.h"
 
 TextNode newTextNode(i64 id, c_str preamble, Vector(Choice) choices) {
     TextNode n = calloc(1, sizeof(*n));

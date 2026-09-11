@@ -1,4 +1,4 @@
-#include "../include/panel.h"
+#include "../../include/rendering/panel.h"
 
 void _panel_header_blit(Panel p) {
     if (!p || !p->header) return;

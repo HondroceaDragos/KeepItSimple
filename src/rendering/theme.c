@@ -1,4 +1,4 @@
-#include "../include/theme.h"
+#include "../../include/rendering/theme.h"
 
 void initDefaultTheme() {
     FILE *t = fopen("data/terminal.txt", "r");
@@ -68,6 +68,8 @@ void initDefaultTheme() {
     b = (i16)strtol(cbuf, nullptr, 16);
 
     defaultTheme.fg = color(r, g, b);  // set fg
+
+    fclose(t);
 }
 
 void initDefaultStyle() {

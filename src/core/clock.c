@@ -1,4 +1,4 @@
-#include "../include/clock.h"
+#include "../../include/core/clock.h"
 
 void _clock_wait(ui64 ms) {
     struct timespec ts = {};

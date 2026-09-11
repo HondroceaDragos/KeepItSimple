@@ -5,7 +5,7 @@ CFLAGS=$(CSTD) $(CMACRODEF) -Wall -Wextra
 LDFLAGS=-lpthread -lm
 
 TARGET=main
-SRC=main.c $(wildcard ./src/*.c)
+SRC=main.c $(wildcard ./src/*.c) $(wildcard ./src/*/*.c)
 
 GO_DIR=./utils/dataLoading/queryTerminal
 GO_TARGET=queryTerminal

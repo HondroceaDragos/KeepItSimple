@@ -26,3 +26,12 @@ struct _panel {
 };
 
 Panel newPanel(TerminalDimensions *td);
+
+deleteDefine(Panel) {
+    if (!self || !*self) return;
+    delete(WritableRegion)(&(*self)->header);
+    delete(WritableRegion)(&(*self)->body);
+    delete(WritableRegion)(&(*self)->footer);
+    free(*self);
+    *self = nullptr;
+}

@@ -1,4 +1,4 @@
-#include "../include/writable_region.h"
+#include "../../include/rendering/writable_region.h"
 
 void _interpret_style_inline_sb(StringBuilder sb, StyleArgs sta) {
     sb->concat.c_str(sb, (sta.stroke & bold) ? "\033[1m" : RESET_BOLD);

@@ -1,4 +1,4 @@
-#include "../include/choice.h"
+#include "../../include/gameplay/choice.h"
 
 Choice newChoice(c_str text, sideEffectFunc sideEffect, i64 goingTo) {
     Choice c = calloc(1, sizeof(*c));

@@ -1,15 +1,10 @@
 #include "utils/SeaCore/stdc.h"
 #include "utils/Print/printer.h"
 
-#include "include/theme.h"
-#include "include/clock.h"
-#include "include/templates.h"
-#include "include/parser.h"
-#include "include/choice.h"
-#include "include/text_node.h"
-#include "include/writable_region.h"
-#include "include/panel.h"
-#include "include/chapter.h"
+#include "include/core/engine.h"
+#include "include/core/typewriter.h"
+#include "include/rendering/renderer.h"
+#include "include/gameplay/chapter.h"
 
 #include <stdio.h>
 
@@ -27,10 +22,6 @@ Color lerpColors(Color start, Color end, f64 dt) {
         start.b + (end.b - start.b) * dt
     );
 }
-
-deleteType(c_str)
-ArrayType(c_str)
-VectorType(c_str)
 
 i32 main(void) {
     initDefaultTheme();
@@ -55,6 +46,7 @@ i32 main(void) {
         }))
     );
 
+    defer(delete(Chapter))
     Chapter c = newChapter(
         "The Sun Rises",
         newVector(TextNode, .using = newArray(TextNode, {n, n1, n2}))
@@ -65,19 +57,22 @@ i32 main(void) {
 
     StringBuilder sb = newStringBuilder(c->name);
     sb->concat.c_str(sb, "\n===============================");
-    i8 * name = sb->release(&sb);
+    i8 *name = sb->release(&sb);
 
+    defer(delete(TextNode))
     TextNode headerMsg = newTextNode(0, name, nullptr);
     headerMsg->blitChCount = (i64)headerMsg->preamble.size;
 
     TerminalDimensions footerDime = (TerminalDimensions){2, 1};
     WritableRegion footer = newWritableRegion(&footerDime, (TerminalDimensions){});
 
+    defer(delete(TextNode))
     TextNode footerMsg = newTextNode(0, "===============================\nDummy Footer", nullptr);
     footerMsg->blitChCount = (i64)footerMsg->preamble.size;
 
     WritableRegion body = newWritableRegion(&t.dimensions, (TerminalDimensions){1, 1});
 
+    defer(delete(Panel))
     Panel p = newPanel(&t.dimensions);
 
     p->addContent.header(p, header);
@@ -89,8 +84,6 @@ i32 main(void) {
     p->footer->addNode(p->footer, footerMsg);
     p->footer->currNode->blitChCount = (i64)p->footer->currNode->preamble.size;
 
-    Clock clk = newClock();
-
     printf("\x1b[?1049h");
     printf(CURSOR_H);
 
@@ -101,47 +94,33 @@ i32 main(void) {
         p->body->offset.rows + p->body->dimensions.rows - 1
     );
 
-    p->blit.header(p);
-    p->blit.footer(p);
-    fflush(stdout);
+    defer(delete(Engine))
+    Engine e = newEngine();
+    e->setTargetFps(e, 30.0);
 
-    // absoluteCursorMove(2, 1);
+    defer(delete(TypeWriter))
+    TypeWriter tw = newTypeWriter(17);
 
-    f64 acc = 0.0;
-    i32 charsPerSecond = 30;
+    defer(delete(Renderer))
+    Renderer r = newRenderer();
 
     size_t cselect = 0;
-    bool newNode = false;
-    i8 input = 0;
-    while (
-        cselect < c->loadedNodes->size ||
-        (p->body->currNode &&
-        p->body->currNode->blitChCount < (i64)p->body->currNode->preamble.size)
-    ) {
-        f64 dt = clk.tick(&clk);
-        acc += dt * charsPerSecond;
-        newNode = false;
+    while (true) {
+        e->getFrameTime(e);
+        size_t chs = tw->advance(tw, e->dt);
 
-        if (!p->body->currNode || p->body->currNode->blitChCount >= (i64)p->body->currNode->preamble.size) {
+        if (!p->body->currNode ||
+            p->body->currNode->blitChCount >= (i64)p->body->currNode->preamble.size) {
+
+            if (cselect >= c->loadedNodes->size) break;
+
             p->body->addNode(p->body, c->loadedNodes->data[cselect++]);
-            newNode = true;
         }
 
-        i64 rev = (i64)acc;
-        if (rev > 0) {
-            p->body->tickWrite(p->body, rev);
-            acc -= (f64)rev;
-            p->blit.body(p);
-        }
-
-        fflush(stdout);
-
-        // if (newNode) scanf("%c", &input);
+        r->drawPanel(r, p, chs);
     }
 
-    // printf("LINES: %zu\n", p->body->lineHistory->size);
-
-    clk.wait(10000);
+    e->clk.wait(10000);
 
     printf("\x1b[r");
     printf("\x1b[?1049l");
@@ -150,7 +129,7 @@ i32 main(void) {
     terminalEnableBuffer(&t);
     terminalDisableRaw(&t);
 
-    // nul
+    free(name);
 
     return 0;
 }
