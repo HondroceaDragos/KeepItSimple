@@ -18,14 +18,31 @@ void _engine_getFrameTime(Engine self) {
     self->dt = dt;
 }
 
+LoopEvent _engine_handleEvent(Engine self, Panel p) {
+    if (!self || !p || !p->body) return EVENT_NOP;
+
+    i8 *key = nullptr;
+    while (self->input_interpreter->poll(self->input_interpreter, &key)) {
+        LoopEvent ev = p->dispatch(p, key);
+        free((void *)key);
+
+        if (ev != EVENT_NOP) return ev;
+    }
+
+    return EVENT_NOP;
+}
+
 Engine newEngine() {
     Engine e = calloc(1, sizeof(*e));
     if (!e) raise(ERROR, "OOM");
 
     e->clk = newClock();
+    e->input_interpreter = newInputInterpreter();
+    e->input_interpreter->listen(e->input_interpreter);
 
     e->getFrameTime = _engine_getFrameTime;
     e->setTargetFps = _engine_setTargetFps;
+    e->handleEvent = _engine_handleEvent;
     
     return e;
 }

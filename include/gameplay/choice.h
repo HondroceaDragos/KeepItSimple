@@ -2,7 +2,7 @@
 
 #include "../templates.h"
 
-typedef (*sideEffectFunc)(i32);
+typedef void (*sideEffectFunc)(i32);
 
 typedef struct _choice *Choice;
 struct _choice {

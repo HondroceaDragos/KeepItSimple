@@ -22,6 +22,7 @@ void _interpret_style_inline_sb(StringBuilder sb, StyleArgs sta) {
 void _writable_region_open_line(WritableRegion wr) {
     if (!wr) return;
     wr->currLine = newStringBuilder("");
+    _interpret_style_inline_sb(wr->currLine, defaultStyle);
 }
 
 void _writable_region_push_line(WritableRegion wr) {
@@ -46,13 +47,16 @@ void _writable_region_push_choices(WritableRegion wr, TextNode n) {
     for (size_t idx = 0; idx < size; idx++) {
         StringBuilder sb = newStringBuilder("");
 
-        _interpret_style_inline_sb(sb, style(.color = gray));
+        StyleArgs tag = defaultStyle;
+        tag.color = gray;
+
+        _interpret_style_inline_sb(sb, tag);
 
         i8 *choiceIdx = cstrfmt("[%zu] ", idx + 1);
         sb->concat.c_str(sb, choiceIdx);
         free(choiceIdx);
 
-        _interpret_style_inline_sb(sb, (StyleArgs){});
+        _interpret_style_inline_sb(sb, defaultStyle);
 
         sb->concat.c_str(sb, n->choices->data[idx]->text);
 
@@ -74,14 +78,13 @@ void _writable_region_new_line(WritableRegion wr) {
         size_t idx = 0;
         while (idx + 1 < n->runs->size && n->runs->data[idx + 1].start_idx < wr->builtChCount) idx++;
 
-        if (!wr->builtChCount && n->runs->size) _interpret_style_inline_sb(wr->currLine, n->runs->data[0].style);
-
         for (size_t jdx = wr->builtChCount; jdx < size; jdx++) {
             while (idx + 1 < n->runs->size && n->runs->data[idx + 1].start_idx == jdx) {
                 _interpret_style_inline_sb(wr->currLine, n->runs->data[++idx].style);
             }
 
             if (n->preamble.data[jdx] == '\n') {
+                wr->currLine->concat.c_str(wr->currLine, endline);
                 _writable_region_push_line(wr);
                 _writable_region_open_line(wr);
                 continue;
@@ -126,8 +129,6 @@ void _writable_region_tickWrite(WritableRegion wr, i64 chpTick) {
 }
 
 void _writable_region_viewport(WritableRegion wr, size_t start, size_t end) {
-    // _writable_region_new_line(wr);
-
     size_t lineCount = wr->lineHistory->size;
     size_t size = lineCount + (wr->currLine ? 1 : 0);
 
@@ -136,11 +137,14 @@ void _writable_region_viewport(WritableRegion wr, size_t start, size_t end) {
     if (start > end) return;
 
     size_t screenRow = 0;
+
+    // fprintf(stdout, "\033[?2026h");
+
     for (size_t idx = start; idx <= end; idx++) {
         absoluteCursorMove(wr->offset.rows + screenRow, wr->offset.cols);
         screenRow++;
-        fprintf(stdout, endline);
 
+        fprintf(stdout, endline);
         if (idx < lineCount) {
             str line = wr->lineHistory->at(wr->lineHistory, idx);
             fprintf(stdout, "%.*s", line.size, line.data);
@@ -149,7 +153,29 @@ void _writable_region_viewport(WritableRegion wr, size_t start, size_t end) {
         }
     }
 
+    // fprintf(stdout, "\033[?2026l");
+
     fflush(stdout);
+}
+
+void _writable_region_scroll(WritableRegion wr, i64 dh) {
+    if (!wr) return;
+
+    size_t size = wr->lineHistory->size;
+    size_t height = size + (wr->currLine ? 1 : 0);
+    size_t th = wr->dimensions.rows;
+    size_t start = (height > th) ? height - th : 0;
+
+    i64 lineIdx = 0;
+    if (wr->autoScroll) lineIdx = start - dh;
+    else lineIdx = wr->regionStart - dh;
+
+    /* clamp */
+    if (lineIdx < 0) lineIdx = 0;
+    if ((size_t)lineIdx > start) lineIdx = (i64)start;
+
+    wr->regionStart = (size_t)lineIdx;
+    wr->autoScroll = ((size_t)lineIdx >= start);
 }
 
 void _writable_region_tickFlush(WritableRegion wr) {
@@ -163,9 +189,16 @@ void _writable_region_tickFlush(WritableRegion wr) {
     if (!height) return;
 
     size_t th = wr->dimensions.rows;
+    size_t start = (height > th) ? height - th : 0;
 
-    if (height <= th) wr->use_viewport(wr, 0, height - 1);
-    else wr->use_viewport(wr, height - th, height - 1);
+    size_t lineIdx = wr->autoScroll ? start : wr->regionStart;
+    if (lineIdx > start) lineIdx = start;  // clamp
+
+    size_t rows = (height <= th) ? height : th;
+    size_t end = lineIdx + rows - 1;
+    if (end >= height) end = height - 1;  // clamp
+
+    wr->use_viewport(wr, lineIdx, end);
 }
 
 WritableRegion newWritableRegion(TerminalDimensions *dimensions, TerminalDimensions offset) {
@@ -178,10 +211,13 @@ WritableRegion newWritableRegion(TerminalDimensions *dimensions, TerminalDimensi
     wr->nodeHistory = newVector(TextNode, 8);
     wr->lineHistory = newVector(str, 8);
 
+    wr->autoScroll = true;
+
     wr->addNode = _writable_region_add_node;
     wr->tickWrite = _writable_region_tickWrite;
     wr->tickFlush = _writable_region_tickFlush;
     wr->use_viewport = _writable_region_viewport;
+    wr->scroll = _writable_region_scroll;
 
     return wr;
 }

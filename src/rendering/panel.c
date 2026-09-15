@@ -54,15 +54,21 @@ void _panel_resize(Panel p) {
     p->footer->offset.rows = p->body->offset.rows + p->body->dimensions.rows;
 }
 
+LoopEvent _panel_dispatch(Panel p, c_str key) {
+    if (!p || !key || !p->actions) return EVENT_NOP;
+    if (!p->actions->contains(p->actions, key)) return EVENT_NOP;
+
+    PanelAction action = p->actions->get(p->actions, key);
+    if (!action) return EVENT_NOP;
+
+    return action(p);
+}
+
 Panel newPanel(TerminalDimensions *td) {
     Panel p = calloc(1, sizeof(*p));
     if (!p) raise(ERROR, "OOM");
 
     p->dimensions = *td;
-
-    // p->header = newWritableRegion(td, (TerminalDimensions){1, 0});
-    // p->footer = newWritableRegion(td, (TerminalDimensions){1, 0});
-    // p->body = newWritableRegion(td, (TerminalDimensions){1, 0});
 
     p->blit.header = _panel_header_blit;
     p->blit.body = _panel_body_blit;
@@ -73,6 +79,7 @@ Panel newPanel(TerminalDimensions *td) {
     p->addContent.footer = _panel_footer_addContent;
 
     p->resize = _panel_resize;
+    p->dispatch = _panel_dispatch;
 
     return p;
 }

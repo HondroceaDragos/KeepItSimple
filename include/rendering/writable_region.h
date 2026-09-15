@@ -16,10 +16,14 @@ struct _writable_region {
     StringBuilder currLine;
     size_t builtChCount;
 
+    size_t regionStart;
+    bool autoScroll;
+
     void (*addNode)(WritableRegion, TextNode);
     void (*tickWrite)(WritableRegion, i64);
     void (*tickFlush)(WritableRegion);
     void (*use_viewport)(WritableRegion, size_t, size_t);
+    void (*scroll)(WritableRegion, i64);
 };
 
 WritableRegion newWritableRegion(TerminalDimensions *dimensions, TerminalDimensions offset);
