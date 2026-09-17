@@ -16,3 +16,5 @@ deleteDefine(Chapter) {
     free(*self);
     *self = nullptr;
 }
+
+extern Chapter currentChapter;

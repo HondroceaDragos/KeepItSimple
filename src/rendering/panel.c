@@ -55,13 +55,34 @@ void _panel_resize(Panel p) {
 }
 
 LoopEvent _panel_dispatch(Panel p, c_str key) {
-    if (!p || !key || !p->actions) return EVENT_NOP;
-    if (!p->actions->contains(p->actions, key)) return EVENT_NOP;
+    if (!p || !key || !p->actions) return newLoopEvent();
+    // if (!p->actions->contains(p->actions, key)) return newLoopEvent();
 
-    PanelAction action = p->actions->get(p->actions, key);
-    if (!action) return EVENT_NOP;
+    if (p->actions->contains(p->actions, key)) {
+        PanelAction action = p->actions->get(p->actions, key);
+        if (action) return action(p, key);
+    }
 
-    return action(p);
+    if (!p->body || !p->body->currNode) return newLoopEvent();
+
+    TextNode n = p->body->currNode;
+
+    if (n->preamble.size != n->blitChCount) return newLoopEvent();
+    if (!n->choices) return newLoopEvent();
+
+    for (size_t idx = 0; idx < n->choices->size; idx++) {
+        Choice c = n->choices->data[idx];
+
+        if (c->trigger != USE_IDX) {
+            if (c->trigger == key[0]) return newLoopEvent(EVENT_CHOICE, c);
+            continue;
+        }
+        
+        i8 relativeKey = (i8)(idx + '1');
+        if (relativeKey == key[0]) return newLoopEvent(EVENT_CHOICE, c);
+    }
+
+    return newLoopEvent();
 }
 
 Panel newPanel(TerminalDimensions *td) {

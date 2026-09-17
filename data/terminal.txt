@@ -1,2 +1,2 @@
-bg #1f0322
-fg #edcf8e
+bg #1e1e1e
+fg #fdf6e3

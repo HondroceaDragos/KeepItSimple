@@ -3,15 +3,10 @@
 #include "writable_region.h"
 
 #include "../../utils/SeaCore/stdc.h"
-
-typedef enum : i8 {
-    EVENT_NOP = 0,
-    EVENT_QUIT,
-    EVENT_PAUSE
-} LoopEvent;
+#include "../core/loop_event.h"
 
 typedef struct _panel *Panel;
-typedef LoopEvent (*PanelAction)(Panel);
+typedef LoopEvent (*PanelAction)(Panel, void *ctx);
 
 deleteType(PanelAction)
 PairType(DictKey, PanelAction)

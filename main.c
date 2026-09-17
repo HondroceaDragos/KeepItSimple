@@ -13,6 +13,8 @@ Theme defaultTheme;
 StyleArgs defaultStyle;
 DynamicArgs defaultDynamic;
 
+Chapter currentChapter = nullptr;
+
 Color lerpColors(Color start, Color end, f64 dt) {
     dt = (dt < 0.0) ? 0.0 : dt;
     dt = (dt > 1.0) ? 1.0 : dt;
@@ -24,22 +26,34 @@ Color lerpColors(Color start, Color end, f64 dt) {
     );
 }
 
-LoopEvent body_scroll_up(Panel p) {
+LoopEvent body_scroll_up(Panel p, void *) {
     if (p->body) p->body->scroll(p->body, 1);
-    return EVENT_NOP;
+    return newLoopEvent();
 }
 
-LoopEvent body_scroll_down(Panel p) {
+LoopEvent body_scroll_down(Panel p, void *) {
     if (p->body) p->body->scroll(p->body, -1);
-    return EVENT_NOP;
+    return newLoopEvent();
 }
 
-LoopEvent game_quit(Panel p) {
-    return EVENT_QUIT;
+LoopEvent game_quit(Panel p, void *) {
+    return newLoopEvent(EVENT_QUIT);
 }
 
-LoopEvent game_pause(Panel p) {
-    return EVENT_PAUSE;
+LoopEvent game_pause(Panel p, void *) {
+    return newLoopEvent(EVENT_PAUSE);
+}
+
+TextNode fetchNodeFromChapter(size_t id) {
+    if (!currentChapter || !currentChapter->loadedNodes) return nullptr;
+
+    Vector(TextNode) nodes = currentChapter->loadedNodes;
+    for (size_t idx = 0; idx < nodes->size; idx++) {
+        TextNode ret = nodes->data[idx];
+        if (ret->id == id) return ret;
+    }
+
+    return nullptr;
 }
 
 i32 main(void) {
@@ -53,28 +67,35 @@ i32 main(void) {
 
     TextNode n = newTextNode(1, "Get out! I am here, [c: red]Richard[/]! Fear me!",
         newVector(Choice, .using = newArray(Choice, {
-            newChoice("Kill him", nullptr, 2),
-            newChoice("Spare him?", nullptr, 2)
+            newChoice("Kill him", 2, .trigger = 'K'),
+            newChoice("Spare him?", 3)
         }))
     );
     TextNode n1 = newTextNode(2, "Ain't no way!", nullptr);
     TextNode n2 = newTextNode(3, "Damn, sorry dude. I was just bustin' [c: green]balls[/], that's all...Why\nAm\nI\nhere\nafter\nall\nthis time?\nAre\nyou\nwith\nme\nor\nare\nyou\nagainst\nme?\nKeep\nIt\nSimple\nJohn\nPlease\n;p\n\n",
         newVector(Choice, .using = newArray(Choice, {
-            newChoice("Stupid...", nullptr, 2),
-            newChoice("Watch it, Chrissy!", nullptr, 2)
+            newChoice("Stupid...", 67),
+            newChoice("Watch it, Chrissy!", 99, .trigger = 'o')
         }))
     );
+    TextNode n4 = newTextNode(67, "He-hey, the king of breadsticks!",
+        newVector(Choice, .using = newArray(Choice, {
+            newChoice("Why wouldn't you do yourself a fucking favour and get the fuck out of my store?!", 876),
+            newChoice("Haha, you ball buster...", 876, .trigger = '3')
+        }))
+    );
+    TextNode n5 = newTextNode(99, "Sorry, I can't. I need to be loyale to my capo!", nullptr);
+    TextNode n6 = newTextNode(876, "Fin.", nullptr);
 
-    defer(delete(Chapter))
-    Chapter c = newChapter(
+    currentChapter = newChapter(
         "The Sun Rises",
-        newVector(TextNode, .using = newArray(TextNode, {n, n1, n2}))
+        newVector(TextNode, .using = newArray(TextNode, {n, n1, n2, n4, n5, n6}))
     );
 
     TerminalDimensions headerDime = (TerminalDimensions){2, 1};
     WritableRegion header = newWritableRegion(&headerDime, (TerminalDimensions){1, 0});
 
-    StringBuilder sb = newStringBuilder(c->name);
+    StringBuilder sb = newStringBuilder(currentChapter->name);
     sb->concat.c_str(sb, "\n");
     for (size_t idx = 0; idx < t.dimensions.cols; idx++) {
         sb->append(sb, '=');
@@ -101,7 +122,6 @@ i32 main(void) {
 
     WritableRegion body = newWritableRegion(&t.dimensions, (TerminalDimensions){1, 1});
 
-    defer(delete(Panel))
     Panel p = newPanel(&t.dimensions);
 
     p->addContent.header(p, header);
@@ -145,25 +165,31 @@ i32 main(void) {
     defer(delete(Renderer))
     Renderer r = newRenderer();
 
-    size_t cselect = 0;
+    p->body->addNode(p->body, n);
 
     bool pause = false;
     while (true) {
         e->getFrameTime(e);
+        size_t chs = 0;
+
         LoopEvent ev = e->handleEvent(e, p);
 
-        if (ev == EVENT_QUIT) break;
-        if (ev == EVENT_PAUSE) pause = !pause;
+        if (ev.id == EVENT_QUIT) break;
 
-        size_t chs = (!pause) ? tw->advance(tw, e->dt) : 0;
-
-        if (!p->body->currNode ||
-            p->body->currNode->blitChCount >= (i64)p->body->currNode->preamble.size) {
-
-            if (cselect < c->loadedNodes->size)
-                p->body->addNode(p->body, c->loadedNodes->data[cselect++]);
+        switch (ev.id) {
+            case EVENT_PAUSE: {
+                pause = !pause;
+                break;
+            }
+            case EVENT_CHOICE: {
+                Choice c = ev.ctx;
+                TextNode n = fetchNodeFromChapter(c->goingTo);
+                if (n) p->body->addNode(p->body, n);
+                break;
+            }
         }
 
+        if (!pause) chs = tw->advance(tw, e->dt);
         r->drawPanel(r, p, chs);
     }
 
@@ -178,10 +204,8 @@ i32 main(void) {
 
     free(name);
     free(fut);
-
-    // nul
-    // nup
-    // nuc
+    delete(Panel)(&p);
+    delete(Chapter)(&currentChapter);
 
     return 0;
 }

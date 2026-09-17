@@ -4,14 +4,19 @@
 
 typedef void (*sideEffectFunc)(i32);
 
+#define END_OF_PATH -1
+#define USE_IDX -1
+
 typedef struct _choice *Choice;
 struct _choice {
     c_str text;
-    sideEffectFunc sideEffect;
     i64 goingTo;
+    sideEffectFunc sideEffect;
+    i8 trigger;
 };
 
-Choice newChoice(c_str text, sideEffectFunc sideEffect, i64 goingTo);
+Choice _newChoice(struct _choice);
+#define newChoice(...) _newChoice((struct _choice){__VA_ARGS__})
 
 deleteDefine(Choice) {
     if (!self || !*self) return;

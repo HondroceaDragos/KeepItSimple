@@ -52,13 +52,16 @@ void _writable_region_push_choices(WritableRegion wr, TextNode n) {
 
         _interpret_style_inline_sb(sb, tag);
 
-        i8 *choiceIdx = cstrfmt("[%zu] ", idx + 1);
-        sb->concat.c_str(sb, choiceIdx);
-        free(choiceIdx);
+        Choice c = n->choices->data[idx];
+
+        size_t relativeIdx = idx + 1;
+        i8 *choiceLabel = (c->trigger == USE_IDX) ? cstrfmt("[%zu] ", relativeIdx) : cstrfmt("[%c] ", c->trigger);
+        sb->concat.c_str(sb, choiceLabel);
+        free(choiceLabel);
 
         _interpret_style_inline_sb(sb, defaultStyle);
 
-        sb->concat.c_str(sb, n->choices->data[idx]->text);
+        sb->concat.c_str(sb, c->text);
 
         wr->currLine = sb;
         _writable_region_push_line(wr);

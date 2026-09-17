@@ -556,7 +556,7 @@ static InputThread _input_thread = {
 static void *_input_listen(void *) {
     while (atomic_load(&(_input_thread.shouldListen))) {
         if (!portable_kbhit()) {
-            usleep(1000);  // yield
+            // usleep(1000);  // yield
             continue;
         }
         _input_thread.store(&_input_thread);
@@ -635,7 +635,7 @@ static inline void _add_pad(FILE *to, int8_t *side, int32_t space,
 
                 if (ms) {
                     fflush(to);
-                    (*fast_f) ? usleep(ms / 5 * 1000) : usleep(ms * 1000);
+                    // (*fast_f) ? usleep(ms / 5 * 1000) : usleep(ms * 1000);
                 }
             }
             (*remaining) += pad_size;
@@ -650,7 +650,7 @@ static inline void _add_pad(FILE *to, int8_t *side, int32_t space,
 
                 if (ms) {
                     fflush(to);
-                    (*fast_f) ? usleep(ms / 5 * 1000) : usleep(ms * 1000);
+                    // (*fast_f) ? usleep(ms / 5 * 1000) : usleep(ms * 1000);
                 }
             }
             (*remaining) = space;
@@ -777,7 +777,7 @@ static inline void _add_char(FILE *to, Printer p, InlineStyle *runs, size_t ridx
             fprintf(to, "%c", *s);
             if (ms) {
                 fflush(to);
-                (fast_f) ? usleep(ms / 5 * 1000) : usleep(ms * 1000);
+                // (fast_f) ? usleep(ms / 5 * 1000) : usleep(ms * 1000);
             }
 
             if (p.layout.wrap == force && size == computed_width - 1) {

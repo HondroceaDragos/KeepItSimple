@@ -1,12 +1,14 @@
 #include "../../include/gameplay/choice.h"
 
-Choice newChoice(c_str text, sideEffectFunc sideEffect, i64 goingTo) {
+Choice _newChoice(struct _choice defaults) {
     Choice c = calloc(1, sizeof(*c));
     if (!c) raise(ERROR, "OOM");
 
-    c->text = text;
-    c->sideEffect = sideEffect;
-    c->goingTo = goingTo;
+    c->text = (defaults.text) ? defaults.text : (c_str)("How did you get here?");
+    c->goingTo = (defaults.goingTo) ? defaults.goingTo : END_OF_PATH;
+
+    c->sideEffect = (defaults.sideEffect) ? defaults.sideEffect : nullptr;
+    c->trigger = (defaults.trigger) ? defaults.trigger : USE_IDX;
 
     return c;
 }

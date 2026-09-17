@@ -23,6 +23,7 @@ vendor/
 *.gch
 *.pch
 main
+KeepItSimple
 
 # Build directories
 /bin/

@@ -19,17 +19,17 @@ void _engine_getFrameTime(Engine self) {
 }
 
 LoopEvent _engine_handleEvent(Engine self, Panel p) {
-    if (!self || !p || !p->body) return EVENT_NOP;
+    if (!self || !p || !p->body) return newLoopEvent();
 
     i8 *key = nullptr;
     while (self->input_interpreter->poll(self->input_interpreter, &key)) {
         LoopEvent ev = p->dispatch(p, key);
         free((void *)key);
 
-        if (ev != EVENT_NOP) return ev;
+        if (ev.id != EVENT_NOP) return ev;
     }
 
-    return EVENT_NOP;
+    return newLoopEvent();
 }
 
 Engine newEngine() {
