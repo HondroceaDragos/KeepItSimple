@@ -37,6 +37,9 @@ struct _panel {
 
     void (*resize)(Panel);
     LoopEvent (*dispatch)(Panel, c_str key);
+
+    void (*onEnter)(Panel);
+    void (*onExit)(Panel);
 };
 
 Panel newPanel(TerminalDimensions *td);
@@ -50,3 +53,7 @@ deleteDefine(Panel) {
     free(*self);
     *self = nullptr;
 }
+
+NodeType(Panel)
+ArrayType(Panel)
+StackType(Panel)

@@ -44,6 +44,30 @@ LoopEvent game_pause(Panel p, void *) {
     return newLoopEvent(EVENT_PAUSE);
 }
 
+void game_on_enter(Panel p) {
+    printf("\x1b[?1049h");
+    printf(CURSOR_H);
+
+    p->resize(p);
+
+    printf("\x1b[%zu;%zur",
+        p->body->offset.rows,
+        p->body->offset.rows + p->body->dimensions.rows - 1
+    );
+}
+
+void game_on_exit(Panel p) {
+    printf("\x1b[r");
+    printf("\x1b[?1049l");
+    printf(CURSOR_S);
+}
+
+void pause_on_enter(Panel p) {
+    printf("\x1b[2J\x1b[H");
+    fflush(stdout);
+}
+void pause_on_exit(Panel p) { return; }
+
 TextNode fetchNodeFromChapter(size_t id) {
     if (!currentChapter || !currentChapter->loadedNodes) return nullptr;
 
@@ -113,7 +137,7 @@ i32 main(void) {
     for (size_t idx = 0; idx < t.dimensions.cols; idx++) {
         sb->append(sb, '=');
     }
-    sb->concat.c_str(sb, "\n[q] Quit [w] Scroll Up [s] Scroll Down");
+    sb->concat.c_str(sb, "\n[q] Quit [w] Scroll Up [s] Scroll Down [P] Pause");
     i8 *fut = sb->release(&sb);
 
     defer(delete(TextNode))
@@ -141,20 +165,6 @@ i32 main(void) {
 
     p->actions = gameActions;
 
-    // printf("Got: %p from %s\n", p->actions->get(p->actions, "w"), "w");
-
-    printf("\x1b[?1049h");
-    printf(CURSOR_H);
-
-    // printf("\033[?2026h");
-
-    p->resize(p);
-
-    printf("\x1b[%zu;%zur",
-        p->body->offset.rows,
-        p->body->offset.rows + p->body->dimensions.rows - 1
-    );
-
     defer(delete(Engine))
     Engine e = newEngine();
     e->setTargetFps(e, 120.0);
@@ -166,45 +176,75 @@ i32 main(void) {
     Renderer r = newRenderer();
 
     p->body->addNode(p->body, n);
+    p->onEnter = game_on_enter;
+    p->onExit = game_on_exit;
+
+    /* Problem with double freeing the Panels -> Orchestrator */
+    defer(delete(Stack(Panel)))
+    Stack(Panel) panels = newStack(Panel);
+    /* Like that? -> into one function -> orchestrator */
+    panels->push(panels, p);
+    panels->peek(panels)->onEnter(panels->peek(panels));
+
+    /* Remove this if pause -> quit */
+    defer(delete(Panel))
+    Panel pausePanel = newPanel(&t.dimensions);
+    pausePanel->onEnter = pause_on_enter;
+    pausePanel->onExit = pause_on_exit;
+
+    defer(delete(TextNode))
+    TextNode pauseMsg = newTextNode(-100, "Cool Pausing Stuff", nullptr);
+
+    pausePanel->addContent.body(pausePanel, newWritableRegion(&t.dimensions, (TerminalDimensions){}));
+
+    pausePanel->body->addNode(pausePanel->body, pauseMsg);
+    pausePanel->body->currNode->blitChCount = (i64)pausePanel->body->currNode->preamble.size;
+
+    pausePanel->actions = newDict(PanelAction);
+    pausePanel->actions->emplace(pausePanel->actions, "p", game_pause);
 
     bool pause = false;
     while (true) {
         e->getFrameTime(e);
         size_t chs = 0;
 
-        LoopEvent ev = e->handleEvent(e, p);
+        LoopEvent ev = e->handleEvent(e, panels->peek(panels));
 
-        if (ev.id == EVENT_QUIT) break;
+        if (ev.id == EVENT_QUIT) {
+            panels->peek(panels)->onExit(panels->peek(panels));
+            break;
+        }
 
         switch (ev.id) {
             case EVENT_PAUSE: {
+                if (pause) {
+                    panels->peek(panels)->onExit(panels->peek(panels));
+                    panels->pop(panels);
+                } else {
+                    panels->push(panels, pausePanel);
+                    panels->peek(panels)->onEnter(panels->peek(panels));
+                }
                 pause = !pause;
                 break;
             }
             case EVENT_CHOICE: {
                 Choice c = ev.ctx;
                 TextNode n = fetchNodeFromChapter(c->goingTo);
-                if (n) p->body->addNode(p->body, n);
+                if (n) panels->peek(panels)->body->addNode(panels->peek(panels)->body, n);
                 break;
             }
         }
 
         if (!pause) chs = tw->advance(tw, e->dt);
-        r->drawPanel(r, p, chs);
+        r->drawPanel(r, panels->peek(panels), chs);
     }
-
-    printf("\x1b[r");
-    printf("\x1b[?1049l");
-    printf(CURSOR_S);
-
-    // printf("\033[?2026l");
 
     // terminalEnableBuffer(&t);
     terminalDisableRaw(&t);
 
     free(name);
     free(fut);
-    delete(Panel)(&p);
+    // delete(Panel)(&p);
     delete(Chapter)(&currentChapter);
 
     return 0;
