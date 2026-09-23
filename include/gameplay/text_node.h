@@ -29,3 +29,6 @@ deleteDefine(TextNode) {
 
 ArrayType(TextNode)
 VectorType(TextNode)
+SetType(TextNode)
+
+i32 TextNode_cmp_id(const void *a, const void *b);

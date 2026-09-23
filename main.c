@@ -7,7 +7,11 @@
 #include "include/rendering/renderer.h"
 #include "include/gameplay/chapter.h"
 
+#include "utils/dataLoading/loadChapter/loadChapter.h"
+
 #include <stdio.h>
+
+#define CHAPTER_PATH "data/chapters/The_Great_Divide.lua"
 
 Theme defaultTheme;
 StyleArgs defaultStyle;
@@ -45,15 +49,27 @@ LoopEvent game_pause(Panel p, void *) {
 }
 
 void game_on_enter(Panel p) {
+    p->contentChanged = true;
+
     printf("\x1b[?1049h");
     printf(CURSOR_H);
 
     p->resize(p);
 
+    printf("\x1b[48;2;%d;%d;%dm",
+        defaultStyle.background.r,
+        defaultStyle.background.g,
+        defaultStyle.background.b
+    );
+
+    printf("\x1b[2J\x1b[H");
+
     printf("\x1b[%zu;%zur",
         p->body->offset.rows,
         p->body->offset.rows + p->body->dimensions.rows - 1
     );
+
+    fflush(stdout);
 }
 
 void game_on_exit(Panel p) {
@@ -63,6 +79,8 @@ void game_on_exit(Panel p) {
 }
 
 void pause_on_enter(Panel p) {
+    p->contentChanged = true;
+
     printf("\x1b[2J\x1b[H");
     fflush(stdout);
 }
@@ -71,7 +89,7 @@ void pause_on_exit(Panel p) { return; }
 TextNode fetchNodeFromChapter(size_t id) {
     if (!currentChapter || !currentChapter->loadedNodes) return nullptr;
 
-    Vector(TextNode) nodes = currentChapter->loadedNodes;
+    Set(TextNode) nodes = currentChapter->loadedNodes;
     for (size_t idx = 0; idx < nodes->size; idx++) {
         TextNode ret = nodes->data[idx];
         if (ret->id == id) return ret;
@@ -89,32 +107,7 @@ i32 main(void) {
     terminalEnableRaw(&t);
     // terminalDisableBuffer(&t);
 
-    TextNode n = newTextNode(1, "Get out! I am here, [c: red]Richard[/]! Fear me!",
-        newVector(Choice, .using = newArray(Choice, {
-            newChoice("Kill him", 2, .trigger = 'K'),
-            newChoice("Spare him?", 3)
-        }))
-    );
-    TextNode n1 = newTextNode(2, "Ain't no way!", nullptr);
-    TextNode n2 = newTextNode(3, "Damn, sorry dude. I was just bustin' [c: green]balls[/], that's all...Why\nAm\nI\nhere\nafter\nall\nthis time?\nAre\nyou\nwith\nme\nor\nare\nyou\nagainst\nme?\nKeep\nIt\nSimple\nJohn\nPlease\n;p\n\n",
-        newVector(Choice, .using = newArray(Choice, {
-            newChoice("Stupid...", 67),
-            newChoice("Watch it, Chrissy!", 99, .trigger = 'o')
-        }))
-    );
-    TextNode n4 = newTextNode(67, "He-hey, the king of breadsticks!",
-        newVector(Choice, .using = newArray(Choice, {
-            newChoice("Why wouldn't you do yourself a fucking favour and get the fuck out of my store?!", 876),
-            newChoice("Haha, you ball buster...", 876, .trigger = '3')
-        }))
-    );
-    TextNode n5 = newTextNode(99, "Sorry, I can't. I need to be loyale to my capo!", nullptr);
-    TextNode n6 = newTextNode(876, "Fin.", nullptr);
-
-    currentChapter = newChapter(
-        "The Sun Rises",
-        newVector(TextNode, .using = newArray(TextNode, {n, n1, n2, n4, n5, n6}))
-    );
+    currentChapter = loadChapter(CHAPTER_PATH);
 
     TerminalDimensions headerDime = (TerminalDimensions){2, 1};
     WritableRegion header = newWritableRegion(&headerDime, (TerminalDimensions){1, 0});
@@ -175,7 +168,7 @@ i32 main(void) {
     defer(delete(Renderer))
     Renderer r = newRenderer();
 
-    p->body->addNode(p->body, n);
+    p->body->addNode(p->body, currentChapter->loadedNodes->data[0]);
     p->onEnter = game_on_enter;
     p->onExit = game_on_exit;
 
@@ -220,6 +213,8 @@ i32 main(void) {
                 if (pause) {
                     panels->peek(panels)->onExit(panels->peek(panels));
                     panels->pop(panels);
+
+                    panels->peek(panels)->contentChanged = true;
                 } else {
                     panels->push(panels, pausePanel);
                     panels->peek(panels)->onEnter(panels->peek(panels));
@@ -245,6 +240,7 @@ i32 main(void) {
     free(name);
     free(fut);
     // delete(Panel)(&p);
+    //
     delete(Chapter)(&currentChapter);
 
     return 0;

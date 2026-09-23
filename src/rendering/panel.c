@@ -56,7 +56,6 @@ void _panel_resize(Panel p) {
 
 LoopEvent _panel_dispatch(Panel p, c_str key) {
     if (!p || !key || !p->actions) return newLoopEvent();
-    // if (!p->actions->contains(p->actions, key)) return newLoopEvent();
 
     if (p->actions->contains(p->actions, key)) {
         PanelAction action = p->actions->get(p->actions, key);
@@ -90,6 +89,7 @@ Panel newPanel(TerminalDimensions *td) {
     if (!p) raise(ERROR, "OOM");
 
     p->dimensions = *td;
+    p->contentChanged = true;
 
     p->blit.header = _panel_header_blit;
     p->blit.body = _panel_body_blit;

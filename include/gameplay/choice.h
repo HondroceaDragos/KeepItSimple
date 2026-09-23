@@ -20,6 +20,7 @@ Choice _newChoice(struct _choice);
 
 deleteDefine(Choice) {
     if (!self || !*self) return;
+    free((*self)->text);
     free(*self);
     *self = nullptr;
 }

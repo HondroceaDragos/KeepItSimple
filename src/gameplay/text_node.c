@@ -18,3 +18,10 @@ TextNode newTextNode(i64 id, c_str preamble, Vector(Choice) choices) {
 
     return n;
 }
+
+i32 TextNode_cmp_id(const void *a, const void *b) {
+    TextNode tna = *(TextNode *)a;
+    TextNode tnb = *(TextNode *)b;
+
+    return (tna->id > tnb->id) - (tna->id < tnb->id);
+}

@@ -40,6 +40,8 @@ struct _panel {
 
     void (*onEnter)(Panel);
     void (*onExit)(Panel);
+
+    bool contentChanged;
 };
 
 Panel newPanel(TerminalDimensions *td);
