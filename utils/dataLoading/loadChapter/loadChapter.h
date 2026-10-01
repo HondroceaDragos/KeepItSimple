@@ -1,7 +1,9 @@
 #pragma once
 
 #include "../../LuaVM/lua_vm.h"
+#include "../../LuaVM/lua_vm_pipeline.h"
 #include "../../../include/gameplay/chapter.h"
+#include "../../../include/entities/player.h"
 
 static inline c_str trimLuaLongString(c_str raw) {
     StringBuilder sb = newStringBuilder("");
@@ -55,53 +57,117 @@ static inline Chapter loadChapter(c_str path) {
     size_t nodeCount = root.size(root);
 
     for (size_t idx = 1; idx <= nodeCount; idx++) {
-        root.push.index(root, idx);
-        LuaTableObject currNode = vm->getOrElse.table(vm, emptyLuaObject());
+        TablePipeline tp = nullptr;
 
-        /* Node ID */
-        currNode.push.field(currNode, "id");
-        i64 id = (i64)vm->getOrElse.integer(vm, -1);
+        LuaTableObject currNode = emptyLuaObject();
 
-        /* Node Preamble */
-        currNode.push.field(currNode, "preamble");
-        c_str raw = vm->getOrElse.c_str(vm, "(nil)");
-        c_str preamble = trimLuaLongString(raw);
+        tp = newTablePipeline(root);
+        tp->get.table(tp, idx, &currNode)
+            ->consume(&tp);
+
+        tp = newTablePipeline(currNode);
+        lua_Integer id = -1;
+        c_str preamble = "(nil)";
+        LuaTableObject choicesTable;
+
+        tp->config.integer(tp, id)
+            ->config.c_str(tp, preamble);
+
+        /* Load Node Data */
+        tp->load.integer(tp, "id", &id)
+            ->load.c_str(tp, "preamble", &preamble)
+            ->load.table(tp, "choices", &choicesTable)
+            ->consume(&tp);
+
+        /* Strip Preamble */
+        c_str raw = preamble;
+        preamble = trimLuaLongString(preamble);
         free(raw);
 
         /* Node Choices */
-        currNode.push.field(currNode, "choices");
-        LuaTableObject choicesTable = vm->getOrElse.table(vm, emptyLuaObject());
-
         Vector(Choice) choices = newVector(Choice);
-
         size_t choiceCount = choicesTable.size(choicesTable);
+
         for (size_t jdx = 1; jdx <= choiceCount; jdx++) {
-            choicesTable.push.index(choicesTable, jdx);
-            LuaTableObject currChoice = vm->getOrElse.table(vm, emptyLuaObject());
+            tp = newTablePipeline(choicesTable);
+            LuaTableObject currChoice = emptyLuaObject();
 
-            /* Choice Text */
-            currChoice.push.field(currChoice, "text");
-            c_str text = vm->getOrElse.c_str(vm, "(nil)");
+            tp->get.table(tp, jdx, &currChoice)
+                ->consume(&tp);
 
-            currChoice.push.field(currChoice, "goingTo");
-            i64 goingTo = vm->getOrElse.integer(vm, -1);
+            tp = newTablePipeline(currChoice);
+            c_str text = "(nil)";
+            lua_Integer trigger = 0;
+            lua_Integer goingTo = END_OF_PATH;
+            LuaTableObject sideEffectsTable = emptyLuaObject();
 
-            choices->push(choices, newChoice(text, goingTo));
+            tp->config.c_str(tp, text)
+                ->config.integer(tp, goingTo);
+
+            /* Load Choice Data */
+            tp->load.c_str(tp, "text", &text)
+                ->load.integer(tp, "goingTo", &goingTo)
+                ->load.integer(tp, "trigger", &trigger)
+                ->load.table(tp, "sideEffects", &sideEffectsTable)
+                ->consume(&tp);
+
+            Set(SideEffect) sideEffects = newSet(SideEffect, se_cmp);
+
+            size_t sideEffectCount = sideEffectsTable.size(sideEffectsTable);
+            for (size_t kdx = 1; kdx <= sideEffectCount; kdx++) {
+                tp = newTablePipeline(sideEffectsTable);
+                LuaTableObject currSideEffect = emptyLuaObject();
+
+                tp->get.table(tp, kdx, &currSideEffect)
+                    ->consume(&tp);
+
+                 /* Load sideEffects */
+                tp = newTablePipeline(currSideEffect);
+                c_str id = "none";
+                lua_Integer failsafe = END_OF_PATH;
+                lua_Integer ammount = 0;
+
+                tp->config.c_str(tp, id)
+                    ->config.integer(tp, ammount);
+
+                tp->load.c_str(tp, "type", &id)
+                    ->load.integer(tp, "ammount", &ammount)
+                    ->load.integer(tp, "failsafe", &failsafe)
+                    ->consume(&tp);
+
+                /**
+                 * TODO: 
+                 * Add Constructor
+                 * Add id lookup
+                 * Check what happens when you gain an item and you die
+                 */
+                SideEffect se = (SideEffect) {
+                    .id = id,
+                    .ammount = ammount,
+                    .func = setPlayerHealth,
+                    .failsafe = failsafe
+                };
+
+                sideEffects->put(sideEffects, se);
+                currSideEffect.release(currSideEffect);
+            }
+
+            choices->push(
+                choices,
+                newChoice(text, goingTo, .trigger = (i8)trigger, .sideEffects = sideEffects));
             free(text);
 
-            vm->pop(vm);
+            currChoice.release(currChoice);
         }
 
-        vm->pop(vm);
+        choicesTable.release(choicesTable);
+        currNode.release(currNode);
 
         c->loadedNodes->put(c->loadedNodes, newTextNode(id, preamble, choices));
         free(preamble);
-
-        vm->pop(vm);
-
     }
 
-    vm->pop(vm);
+    root.release(root);
 
     vm->close(vm);
 

@@ -19,11 +19,12 @@ struct _lua_table_object {
     size_t stackIdx;
 
     struct {
-        void (*field)(LuaTableObject, c_str);
-        void (*index)(LuaTableObject, lua_Integer);
+        bool (*field)(LuaTableObject, c_str);
+        bool (*index)(LuaTableObject, lua_Integer);
     } push;
 
     size_t (*size)(LuaTableObject);
+    void (*release)(LuaTableObject);
 };
 
 struct _lua_vm {
@@ -151,22 +152,34 @@ static inline LuaErrorCode _lua_vm_dumpFile(LuaVM vm, c_str path) {
     return luaL_dofile(vm->state, path);
 }
 
-static inline void _lua_table_object_push_field(LuaTableObject lto, c_str fieldName) {
-    if (!lto.ref || !lto.stackIdx) return;
+static inline bool _lua_table_object_push_field(LuaTableObject lto, c_str fieldName) {
+    if (!lto.ref || !lto.stackIdx) return false;
+    if (lua_type(lto.ref->state, lto.stackIdx) != LUA_TTABLE) return false;
     if (!lua_checkstack(lto.ref->state, 1)) raise(ERROR, "Lua Virtual Stack cannot grow.");
 
     lua_getfield(lto.ref->state, lto.stackIdx, fieldName);
 
-    if (lua_isnil(lto.ref->state, -1)) _lua_vm_pop(lto.ref);
+    if (lua_isnil(lto.ref->state, -1)) {
+        _lua_vm_pop(lto.ref);
+        return false;
+    }
+
+    return true;
 }
 
-static inline void _lua_table_object_push_index(LuaTableObject lto, lua_Integer index) {
-    if (!lto.ref || !lto.stackIdx) return;
+static inline bool _lua_table_object_push_index(LuaTableObject lto, lua_Integer index) {
+    if (!lto.ref || !lto.stackIdx) return false;
+    if (lua_type(lto.ref->state, lto.stackIdx) != LUA_TTABLE) return false;
     if (!lua_checkstack(lto.ref->state, 1)) raise(ERROR, "Lua Virtual Stack cannot grow.");
 
     lua_geti(lto.ref->state, lto.stackIdx, index);
 
-    if (lua_isnil(lto.ref->state, -1)) _lua_vm_pop(lto.ref);
+    if (lua_isnil(lto.ref->state, -1)) {
+        _lua_vm_pop(lto.ref);
+        return false;
+    }
+
+    return true;
 }
 
 static inline size_t _lua_table_size(LuaTableObject lto) {
@@ -184,6 +197,11 @@ static inline size_t _lua_table_size(LuaTableObject lto) {
     return size;
 }
 
+static inline void _lua_table_object_release(LuaTableObject lto) {
+    LuaVM vm = lto.ref;
+    vm->pop(vm);
+}
+
 static inline LuaTableObject newLuaTableObject(LuaVM ref) {
     LuaTableObject lto = {};
 
@@ -194,6 +212,7 @@ static inline LuaTableObject newLuaTableObject(LuaVM ref) {
     lto.push.index = _lua_table_object_push_index;
 
     lto.size = _lua_table_size;
+    lto.release = _lua_table_object_release;
 
     return lto;
 }
@@ -202,7 +221,8 @@ static inline LuaTableObject emptyLuaObject(void) {
     return (LuaTableObject){
         .push.field = _lua_table_object_push_field,
         .push.index = _lua_table_object_push_index,
-        .size = _lua_table_size
+        .size = _lua_table_size,
+        .release = _lua_table_object_release
     };
 }
 
@@ -249,6 +269,6 @@ static inline LuaVM newLuaVM(void) {
 
 deleteDefine(LuaVM) {
     if (!self || !*self) return;
-    free((*self));
+    free(*self);
     *self = nullptr;
 }

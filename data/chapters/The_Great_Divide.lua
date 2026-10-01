@@ -3,8 +3,23 @@ return {
         id = 1,
         ["preamble"] = [=[[JASON] How could you do this to us?]=],
         choices = {
-            {text = "What do you want from me?", goingTo = 2},
-            {text = "Oh pluh-ease...", goingTo = 3}
+            {
+                text = "What do you want from me?",
+                goingTo = 2,
+                sideEffects = {
+                    {
+                        type = "health",
+                        ammount = -7,
+                        failsafe = 999
+                    }
+                },
+                trigger = string.byte('k')
+            },
+            {
+                text = "Oh pluh-ease...",
+                goingTo = 3,
+                trigger = string.byte('o')
+            }
         }
     },
     {
@@ -46,6 +61,11 @@ return {
     {
         id = 8,
         ["preamble"] = [=[Fin.]=],
+        choices = {}
+    },
+    {
+        id = 999,
+        ["preamble"] = [=[You [c: red]DIED![/] RIP...]=],
         choices = {}
     },
 }

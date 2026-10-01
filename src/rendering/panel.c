@@ -73,12 +73,12 @@ LoopEvent _panel_dispatch(Panel p, c_str key) {
         Choice c = n->choices->data[idx];
 
         if (c->trigger != USE_IDX) {
-            if (c->trigger == key[0]) return newLoopEvent(EVENT_CHOICE, c);
+            if (c->trigger == key[0]) return newLoopEvent(.id = EVENT_CHOICE, .ctx = c, .target = c->goingTo);
             continue;
         }
         
         i8 relativeKey = (i8)(idx + '1');
-        if (relativeKey == key[0]) return newLoopEvent(EVENT_CHOICE, c);
+        if (relativeKey == key[0]) return newLoopEvent(.id = EVENT_CHOICE, .ctx = c, .target = c->goingTo);
     }
 
     return newLoopEvent();

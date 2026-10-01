@@ -7,6 +7,9 @@
 #include "include/rendering/renderer.h"
 #include "include/gameplay/chapter.h"
 
+#include "include/entities/entity.h"
+#include "include/entities/player.h"
+
 #include "utils/dataLoading/loadChapter/loadChapter.h"
 
 #include <stdio.h>
@@ -196,7 +199,10 @@ i32 main(void) {
     pausePanel->actions = newDict(PanelAction);
     pausePanel->actions->emplace(pausePanel->actions, "p", game_pause);
 
+    Entity et = {};
+
     bool pause = false;
+    player = newPlayer(.super.name = "Gigi", .super.health = 10);
     while (true) {
         e->getFrameTime(e);
         size_t chs = 0;
@@ -224,7 +230,14 @@ i32 main(void) {
             }
             case EVENT_CHOICE: {
                 Choice c = ev.ctx;
+                c->apply(c, e->events);
+
                 TextNode n = fetchNodeFromChapter(c->goingTo);
+                if (n) panels->peek(panels)->body->addNode(panels->peek(panels)->body, n);
+                break;
+            }
+            case EVENT_ENDGAME: {
+                TextNode n = fetchNodeFromChapter(ev.target);
                 if (n) panels->peek(panels)->body->addNode(panels->peek(panels)->body, n);
                 break;
             }
@@ -240,8 +253,9 @@ i32 main(void) {
     free(name);
     free(fut);
     // delete(Panel)(&p);
-    //
     delete(Chapter)(&currentChapter);
 
     return 0;
 }
+//
+//

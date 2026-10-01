@@ -21,24 +21,26 @@ void _engine_getFrameTime(Engine self) {
 LoopEvent _engine_handleEvent(Engine self, Panel p) {
     if (!self || !p || !p->body) return newLoopEvent();
 
-    i8 *key = nullptr;
-    while (self->input_interpreter->poll(self->input_interpreter, &key)) {
-        LoopEvent ev = p->dispatch(p, key);
-        free((void *)key);
+    LoopEvent ret;
 
-        if (ev.id != EVENT_NOP) return ev;
-    }
+    if (!self->events->poll(self->events, &ret)) return newLoopEvent();
+    if (ret.id == EVENT_KEY) return p->dispatch(p, ret.key);
 
-    return newLoopEvent();
+    return ret;
 }
 
-Engine newEngine() {
+Engine newEngine(void) {
     Engine e = calloc(1, sizeof(*e));
     if (!e) raise(ERROR, "OOM");
 
     e->clk = newClock();
-    e->input_interpreter = newInputInterpreter();
+    e->events = newEventQueue();
+
+    e->input_interpreter = newInputInterpreter(e->events);
+    e->background_interpreter = newBackgroundInterpreter(e->events);
+
     e->input_interpreter->listen(e->input_interpreter);
+    e->background_interpreter->listen(e->background_interpreter);
 
     e->getFrameTime = _engine_getFrameTime;
     e->setTargetFps = _engine_setTargetFps;
