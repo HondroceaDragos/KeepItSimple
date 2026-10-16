@@ -23,7 +23,14 @@ struct _loop_event {
 LoopEvent _newLoopEvent(struct _loop_event);
 #define newLoopEvent(...) _newLoopEvent((LoopEvent){__VA_ARGS__})
 
-deleteType(LoopEvent)
+// deleteType(LoopEvent)
+deleteDefine(LoopEvent) {
+    if (!self) return;
+    if ((*self).id == EVENT_KEY && (*self).key) {
+        free((*self).key);
+        (*self).key = nullptr;
+    }
+}
 ArrayType(LoopEvent)
 NodeType(LoopEvent)
 DequeType(LoopEvent)

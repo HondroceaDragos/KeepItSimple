@@ -9,7 +9,7 @@ return {
                 sideEffects = {
                     {
                         type = "health",
-                        ammount = -7,
+                        ammount = -100,
                         failsafe = 999
                     }
                 },

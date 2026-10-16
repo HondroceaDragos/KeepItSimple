@@ -48,3 +48,7 @@ Thumbs.db
 # --- Env / local config ---
 .env
 *.local
+
+# --- Archives ---
+*.zip
+*.tar.gz

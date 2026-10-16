@@ -13,4 +13,11 @@ Player _newPlayer(struct _player defaults);
 
 extern Player player;
 
+deleteDefine(Player) {
+    if (!self || !*self) return;
+    delete(Dict(i32))(&(*self)->super.attributes);
+    free((*self));
+    *self = nullptr;
+}
+
 LoopEvent setPlayerHealth(c_str, i32);

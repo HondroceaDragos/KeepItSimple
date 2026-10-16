@@ -7,8 +7,8 @@ i32 se_cmp(const void *a, const void *b) {
     return (i32)strcmp(sea.id, seb.id);
 }
 
-void _choice_apply(Choice c, EventQueue events) {
-    if (!c || !c->sideEffects || !events) return;
+bool _choice_apply(Choice c, EventQueue events) {
+    if (!c || !c->sideEffects || !events) return false;
 
     for (size_t idx = 0; idx < c->sideEffects->size; idx++) {
         SideEffect effect = c->sideEffects->at(c->sideEffects, idx);
@@ -22,11 +22,13 @@ void _choice_apply(Choice c, EventQueue events) {
 
             event.target = effect.failsafe;
             events->push(events, event);
-            return;
+            return true;
         }
 
         if (event.id != EVENT_NOP) events->push(events, event);
     }
+
+    return false;
 }
 
 Choice _newChoice(struct _choice defaults) {

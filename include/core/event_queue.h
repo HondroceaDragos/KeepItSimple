@@ -19,6 +19,8 @@ deleteDefine(EventQueue) {
     if (!self || !*self) return;
 
     pthread_mutex_destroy(&(*self)->mutex);
+    LoopEvent iter;
+    while ((*self)->poll(*self, &iter)) delete(LoopEvent)(&iter);
     delete(Deque(LoopEvent))(&(*self)->events);
 
     free(*self);

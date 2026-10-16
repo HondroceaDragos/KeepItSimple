@@ -13,7 +13,11 @@ typedef struct _side_effect {
     i64 failsafe;
 } SideEffect;
 
-deleteType(SideEffect)
+// deleteType(SideEffect)
+deleteDefine(SideEffect) {
+    if (!self) return;
+    free((*self).id);
+}
 ArrayType(SideEffect)
 SetType(SideEffect)
 
@@ -27,7 +31,7 @@ struct _choice {
     Set(SideEffect) sideEffects;
     i8 trigger;
 
-    void (*apply)(Choice, EventQueue);
+    bool (*apply)(Choice, EventQueue);
 };
 
 Choice _newChoice(struct _choice);

@@ -24,7 +24,11 @@ LoopEvent _engine_handleEvent(Engine self, Panel p) {
     LoopEvent ret;
 
     if (!self->events->poll(self->events, &ret)) return newLoopEvent();
-    if (ret.id == EVENT_KEY) return p->dispatch(p, ret.key);
+    if (ret.id == EVENT_KEY) {
+        LoopEvent tmp = p->dispatch(p, ret.key);
+        delete(LoopEvent)(&ret);
+        return tmp;
+    }
 
     return ret;
 }
